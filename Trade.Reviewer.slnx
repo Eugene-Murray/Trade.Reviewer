@@ -8,7 +8,8 @@
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
   </Folder>
-  <Folder Name="/src/">
+  <Folder Name="/src/" />
+  <Folder Name="/src/API/">
     <Project Path="src/Trade.Application/Trade.Application.csproj" />
     <Project Path="src/Trade.Domain/Trade.Domain.csproj" />
     <Project Path="src/Trade.Infrastructure/Trade.Infrastructure.csproj" />
