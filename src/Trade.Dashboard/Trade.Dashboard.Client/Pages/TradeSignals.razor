@@ -61,6 +61,25 @@
                 }
                 else
                 {
+                    <div class="row mb-3 g-2">
+                        <div class="col-md-5">
+                            <input type="text" class="form-control" placeholder="Search by stock name..."
+                                   @bind="_searchTerm" @bind:event="oninput" @onkeyup="OnFilterChanged" />
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select" @bind="_directionFilter" @bind:after="OnFilterChanged">
+                                <option value="">All directions</option>
+                                @foreach (var direction in Enum.GetValues<TradeDirection>())
+                                {
+                                    <option value="@direction">@direction</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3 text-end">
+                            <span class="text-muted">@FilteredSignals.Count() of @_signals.Count signals</span>
+                        </div>
+                    </div>
+
                     <div class="table-responsive">
                         <table class="table table-striped align-middle">
                             <thead>
@@ -72,7 +91,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var signal in _signals)
+                                @foreach (var signal in PagedSignals)
                                 {
                                     <tr>
                                         <td>@signal.StockName</td>
@@ -87,6 +106,33 @@
                             </tbody>
                         </table>
                     </div>
+
+                    @if (TotalPages > 1)
+                    {
+                        <nav aria-label="Signal pagination">
+                            <ul class="pagination justify-content-center mb-0">
+                                <li class="page-item @(_currentPage == 1 ? "disabled" : "")">
+                                    <button class="page-link" @onclick="() => GoToPage(1)" disabled="@(_currentPage == 1)">First</button>
+                                </li>
+                                <li class="page-item @(_currentPage == 1 ? "disabled" : "")">
+                                    <button class="page-link" @onclick="() => GoToPage(_currentPage - 1)" disabled="@(_currentPage == 1)">Previous</button>
+                                </li>
+                                @for (int i = Math.Max(1, _currentPage - 2); i <= Math.Min(TotalPages, _currentPage + 2); i++)
+                                {
+                                    var pageNum = i;
+                                    <li class="page-item @(pageNum == _currentPage ? "active" : "")">
+                                        <button class="page-link" @onclick="() => GoToPage(pageNum)">@pageNum</button>
+                                    </li>
+                                }
+                                <li class="page-item @(_currentPage == TotalPages ? "disabled" : "")">
+                                    <button class="page-link" @onclick="() => GoToPage(_currentPage + 1)" disabled="@(_currentPage == TotalPages)">Next</button>
+                                </li>
+                                <li class="page-item @(_currentPage == TotalPages ? "disabled" : "")">
+                                    <button class="page-link" @onclick="() => GoToPage(TotalPages)" disabled="@(_currentPage == TotalPages)">Last</button>
+                                </li>
+                            </ul>
+                        </nav>
+                    }
                 }
             </div>
         </div>
@@ -99,11 +145,44 @@
     private int? _editingId;
     private string? _errorMessage;
 
+    // Search, filter, and paging
+    private string _searchTerm = string.Empty;
+    private string _directionFilter = string.Empty;
+    private int _currentPage = 1;
+    private const int PageSize = 10;
+
+    private IEnumerable<TradeSignalDto> FilteredSignals => _signals?
+        .Where(s => string.IsNullOrWhiteSpace(_searchTerm) ||
+                    s.StockName.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase))
+        .Where(s => string.IsNullOrEmpty(_directionFilter) ||
+                    s.Direction.ToString() == _directionFilter)
+        ?? [];
+
+    private IEnumerable<TradeSignalDto> PagedSignals => FilteredSignals
+        .Skip((_currentPage - 1) * PageSize)
+        .Take(PageSize);
+
+    private int TotalPages => (int)Math.Ceiling(FilteredSignals.Count() / (double)PageSize);
+
+    private void OnFilterChanged()
+    {
+        _currentPage = 1;
+    }
+
+    private void GoToPage(int page)
+    {
+        if (page >= 1 && page <= TotalPages)
+        {
+            _currentPage = page;
+        }
+    }
+
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
     private async Task LoadAsync()
     {
         _errorMessage = null;
+        _currentPage = 1;
 
         try
         {

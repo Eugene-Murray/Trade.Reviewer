@@ -56,6 +56,16 @@
                 }
                 else
                 {
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" placeholder="Search by stock name or notes..."
+                                   @bind="_searchTerm" @bind:event="oninput" @onkeyup="OnSearchChanged" />
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <span class="text-muted">@FilteredItems.Count() of @_items.Count items</span>
+                        </div>
+                    </div>
+
                     <div class="table-responsive">
                         <table class="table table-striped align-middle">
                             <thead>
@@ -69,7 +79,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var item in _items)
+                                @foreach (var item in PagedItems)
                                 {
                                     <tr>
                                         <td>@item.StockName</td>
@@ -86,6 +96,33 @@
                             </tbody>
                         </table>
                     </div>
+
+                    @if (TotalPages > 1)
+                    {
+                        <nav aria-label="Watchlist pagination">
+                            <ul class="pagination justify-content-center mb-0">
+                                <li class="page-item @(_currentPage == 1 ? "disabled" : "")">
+                                    <button class="page-link" @onclick="() => GoToPage(1)" disabled="@(_currentPage == 1)">First</button>
+                                </li>
+                                <li class="page-item @(_currentPage == 1 ? "disabled" : "")">
+                                    <button class="page-link" @onclick="() => GoToPage(_currentPage - 1)" disabled="@(_currentPage == 1)">Previous</button>
+                                </li>
+                                @for (int i = Math.Max(1, _currentPage - 2); i <= Math.Min(TotalPages, _currentPage + 2); i++)
+                                {
+                                    var pageNum = i;
+                                    <li class="page-item @(pageNum == _currentPage ? "active" : "")">
+                                        <button class="page-link" @onclick="() => GoToPage(pageNum)">@pageNum</button>
+                                    </li>
+                                }
+                                <li class="page-item @(_currentPage == TotalPages ? "disabled" : "")">
+                                    <button class="page-link" @onclick="() => GoToPage(_currentPage + 1)" disabled="@(_currentPage == TotalPages)">Next</button>
+                                </li>
+                                <li class="page-item @(_currentPage == TotalPages ? "disabled" : "")">
+                                    <button class="page-link" @onclick="() => GoToPage(TotalPages)" disabled="@(_currentPage == TotalPages)">Last</button>
+                                </li>
+                            </ul>
+                        </nav>
+                    }
                 }
             </div>
         </div>
@@ -98,11 +135,42 @@
     private int? _editingId;
     private string? _errorMessage;
 
+    // Search and paging
+    private string _searchTerm = string.Empty;
+    private int _currentPage = 1;
+    private const int PageSize = 10;
+
+    private IEnumerable<WatchlistItemDto> FilteredItems => _items?
+        .Where(i => string.IsNullOrWhiteSpace(_searchTerm) ||
+                    i.StockName.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    (i.Notes?.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ?? false))
+        ?? [];
+
+    private IEnumerable<WatchlistItemDto> PagedItems => FilteredItems
+        .Skip((_currentPage - 1) * PageSize)
+        .Take(PageSize);
+
+    private int TotalPages => (int)Math.Ceiling(FilteredItems.Count() / (double)PageSize);
+
+    private void OnSearchChanged()
+    {
+        _currentPage = 1;
+    }
+
+    private void GoToPage(int page)
+    {
+        if (page >= 1 && page <= TotalPages)
+        {
+            _currentPage = page;
+        }
+    }
+
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
     private async Task LoadAsync()
     {
         _errorMessage = null;
+        _currentPage = 1;
 
         try
         {
