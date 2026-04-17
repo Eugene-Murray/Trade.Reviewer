@@ -17,13 +17,14 @@ main {
     background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
     position: relative;
     transition: width 0.3s ease;
+    overflow: hidden;
 }
 
 /* Toggle button styling */
 .sidebar-toggle {
-    position: absolute;
+    position: fixed;
     bottom: 1rem;
-    right: -12px;
+    left: 238px;
     width: 24px;
     height: 24px;
     border-radius: 50%;
@@ -34,12 +35,17 @@ main {
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 10;
-    transition: background-color 0.2s ease;
+    z-index: 100;
+    transition: left 0.3s ease, background-color 0.2s ease;
 }
 
 .sidebar-toggle:hover {
     background-color: #3a0647;
+}
+
+/* Move toggle button when collapsed */
+.sidebar-toggle-checkbox:checked ~ .page .sidebar-toggle {
+    left: 53px;
 }
 
 /* Arrow icon using CSS */
