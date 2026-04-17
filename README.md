@@ -57,3 +57,7 @@ Default local URLs:
 ```powershell
 dotnet test Trade.Reviewer.slnx
 ```
+
+
+<img width="1199" height="635" alt="image" src="https://github.com/user-attachments/assets/ef22f2c0-876d-494e-b8a3-da0562707721" />
+
