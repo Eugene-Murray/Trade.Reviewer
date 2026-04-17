@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Trade.Application/Trade.Application.csproj" />
+    <Project Path="src/Trade.Domain/Trade.Domain.csproj" />
+    <Project Path="src/Trade.Infrastructure/Trade.Infrastructure.csproj" />
+    <Project Path="src/Trade.Mcp.Api/Trade.Mcp.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/Trade.Dashboard/">
+    <Project Path="src/Trade.Dashboard/Trade.Dashboard.Client/Trade.Dashboard.Client.csproj" />
+    <Project Path="src/Trade.Dashboard/Trade.Dashboard/Trade.Dashboard.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Trade.Application.Tests/Trade.Application.Tests.csproj" />
+    <Project Path="tests/Trade.Domain.Tests/Trade.Domain.Tests.csproj" />
+    <Project Path="tests/Trade.Mcp.Api.Tests/Trade.Mcp.Api.Tests.csproj" />
+  </Folder>
+</Solution>

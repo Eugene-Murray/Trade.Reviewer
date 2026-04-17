@@ -1,0 +1,162 @@
+@page "/accounts"
+@rendermode InteractiveServer
+@inject ITradeDashboardApiClient ApiClient
+
+<PageTitle>Accounts</PageTitle>
+
+<h1>Accounts</h1>
+<p>Update account names and balances through the Minimal API.</p>
+
+@if (!string.IsNullOrWhiteSpace(_errorMessage))
+{
+    <div class="alert alert-danger">@_errorMessage</div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">@(_editingId.HasValue ? "Edit account" : "Add account")</h2>
+                <EditForm Model="_form" OnValidSubmit="SaveAsync">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="mb-3">
+                        <label class="form-label" for="account-name">Account name</label>
+                        <InputText id="account-name" class="form-control" @bind-Value="_form.AccountName" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="account-balance">Account balance</label>
+                        <InputNumber id="account-balance" class="form-control" @bind-Value="_form.AccountBalance" />
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">@(_editingId.HasValue ? "Save changes" : "Create account")</button>
+                        <button type="button" class="btn btn-outline-secondary" @onclick="ResetForm">Clear</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">Current accounts</h2>
+
+                @if (_accounts is null)
+                {
+                    <p>Loading accounts...</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Balance</th>
+                                    <th>Open trades</th>
+                                    <th>Open exposure</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var account in _accounts)
+                                {
+                                    <tr>
+                                        <td>@account.AccountName</td>
+                                        <td>@account.AccountBalance.ToString("C")</td>
+                                        <td>@account.OpenTradeCount</td>
+                                        <td>@account.OpenExposure.ToString("C")</td>
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-sm btn-outline-primary me-2" @onclick="() => Edit(account)">Edit</button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteAsync(account.Id)">Delete</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private IReadOnlyList<AccountDto>? _accounts;
+    private AccountFormModel _form = new();
+    private int? _editingId;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _errorMessage = null;
+
+        try
+        {
+            _accounts = await ApiClient.GetAccountsAsync();
+        }
+        catch (ApiException exception)
+        {
+            _errorMessage = exception.Message;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        _errorMessage = null;
+
+        try
+        {
+            if (_editingId.HasValue)
+            {
+                await ApiClient.UpdateAccountAsync(_editingId.Value, _form.ToRequest());
+            }
+            else
+            {
+                await ApiClient.CreateAccountAsync(_form.ToRequest());
+            }
+
+            ResetForm();
+            await LoadAsync();
+        }
+        catch (ApiException exception)
+        {
+            _errorMessage = exception.Message;
+        }
+    }
+
+    private void Edit(AccountDto account)
+    {
+        _editingId = account.Id;
+        _form = AccountFormModel.FromDto(account);
+        _errorMessage = null;
+    }
+
+    private async Task DeleteAsync(int id)
+    {
+        _errorMessage = null;
+
+        try
+        {
+            await ApiClient.DeleteAccountAsync(id);
+            await LoadAsync();
+        }
+        catch (ApiException exception)
+        {
+            _errorMessage = exception.Message;
+        }
+    }
+
+    private void ResetForm()
+    {
+        _editingId = null;
+        _form = new AccountFormModel();
+        _errorMessage = null;
+    }
+}

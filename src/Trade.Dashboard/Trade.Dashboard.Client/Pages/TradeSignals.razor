@@ -1,0 +1,170 @@
+@page "/trade-signals"
+@rendermode InteractiveWebAssembly
+@inject ITradeDashboardApiClient ApiClient
+
+<PageTitle>Trade Signals</PageTitle>
+
+<h1>Trade signals</h1>
+<p>Maintain long and short signals over WebAssembly.</p>
+
+@if (!string.IsNullOrWhiteSpace(_errorMessage))
+{
+    <div class="alert alert-danger">@_errorMessage</div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">@(_editingId.HasValue ? "Edit signal" : "Add signal")</h2>
+                <EditForm Model="_form" OnValidSubmit="SaveAsync">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="mb-3">
+                        <label class="form-label" for="signal-stock">Stock name</label>
+                        <InputText id="signal-stock" class="form-control" @bind-Value="_form.StockName" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="signal-direction">Direction</label>
+                        <InputSelect id="signal-direction" class="form-select" @bind-Value="_form.Direction">
+                            @foreach (var direction in Enum.GetValues<TradeDirection>())
+                            {
+                                <option value="@direction">@direction</option>
+                            }
+                        </InputSelect>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="signal-date">Signal date</label>
+                        <InputDate id="signal-date" class="form-control" @bind-Value="_form.SignalDate" />
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">@(_editingId.HasValue ? "Save changes" : "Create signal")</button>
+                        <button type="button" class="btn btn-outline-secondary" @onclick="ResetForm">Clear</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">Current signals</h2>
+
+                @if (_signals is null)
+                {
+                    <p>Loading signals...</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Stock</th>
+                                    <th>Direction</th>
+                                    <th>Signal date</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var signal in _signals)
+                                {
+                                    <tr>
+                                        <td>@signal.StockName</td>
+                                        <td>@signal.Direction</td>
+                                        <td>@signal.SignalDate</td>
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-sm btn-outline-primary me-2" @onclick="() => Edit(signal)">Edit</button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteAsync(signal.Id)">Delete</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private IReadOnlyList<TradeSignalDto>? _signals;
+    private TradeSignalFormModel _form = new();
+    private int? _editingId;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _errorMessage = null;
+
+        try
+        {
+            _signals = await ApiClient.GetTradeSignalsAsync();
+        }
+        catch (ApiException exception)
+        {
+            _errorMessage = exception.Message;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        _errorMessage = null;
+
+        try
+        {
+            if (_editingId.HasValue)
+            {
+                await ApiClient.UpdateTradeSignalAsync(_editingId.Value, _form.ToRequest());
+            }
+            else
+            {
+                await ApiClient.CreateTradeSignalAsync(_form.ToRequest());
+            }
+
+            ResetForm();
+            await LoadAsync();
+        }
+        catch (ApiException exception)
+        {
+            _errorMessage = exception.Message;
+        }
+    }
+
+    private void Edit(TradeSignalDto signal)
+    {
+        _editingId = signal.Id;
+        _form = TradeSignalFormModel.FromDto(signal);
+        _errorMessage = null;
+    }
+
+    private async Task DeleteAsync(int id)
+    {
+        _errorMessage = null;
+
+        try
+        {
+            await ApiClient.DeleteTradeSignalAsync(id);
+            await LoadAsync();
+        }
+        catch (ApiException exception)
+        {
+            _errorMessage = exception.Message;
+        }
+    }
+
+    private void ResetForm()
+    {
+        _editingId = null;
+        _form = new TradeSignalFormModel();
+        _errorMessage = null;
+    }
+}

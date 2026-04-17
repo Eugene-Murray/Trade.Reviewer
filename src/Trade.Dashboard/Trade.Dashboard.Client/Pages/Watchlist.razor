@@ -1,0 +1,169 @@
+@page "/watchlist"
+@rendermode InteractiveWebAssembly
+@inject ITradeDashboardApiClient ApiClient
+
+<PageTitle>Watchlist</PageTitle>
+
+<h1>Watchlist</h1>
+<p>Maintain the seeded Nasdaq mega-cap watchlist over WebAssembly.</p>
+
+@if (!string.IsNullOrWhiteSpace(_errorMessage))
+{
+    <div class="alert alert-danger">@_errorMessage</div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">@(_editingId.HasValue ? "Edit watchlist item" : "Add watchlist item")</h2>
+                <EditForm Model="_form" OnValidSubmit="SaveAsync">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="mb-3">
+                        <label class="form-label" for="stock-name">Stock name</label>
+                        <InputText id="stock-name" class="form-control" @bind-Value="_form.StockName" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="watchlist-notes">Notes</label>
+                        <InputTextArea id="watchlist-notes" class="form-control" @bind-Value="_form.Notes" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="date-added">Date added</label>
+                        <InputDate id="date-added" class="form-control" @bind-Value="_form.DateAdded" />
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">@(_editingId.HasValue ? "Save changes" : "Create item")</button>
+                        <button type="button" class="btn btn-outline-secondary" @onclick="ResetForm">Clear</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">Current watchlist</h2>
+
+                @if (_items is null)
+                {
+                    <p>Loading watchlist...</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Stock</th>
+                                    <th>Date added</th>
+                                    <th>Signals</th>
+                                    <th>Open trades</th>
+                                    <th>Notes</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in _items)
+                                {
+                                    <tr>
+                                        <td>@item.StockName</td>
+                                        <td>@item.DateAdded</td>
+                                        <td>@item.SignalCount</td>
+                                        <td>@item.OpenTradeCount</td>
+                                        <td>@item.Notes</td>
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-sm btn-outline-primary me-2" @onclick="() => Edit(item)">Edit</button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteAsync(item.Id)">Delete</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private IReadOnlyList<WatchlistItemDto>? _items;
+    private WatchlistFormModel _form = new();
+    private int? _editingId;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _errorMessage = null;
+
+        try
+        {
+            _items = await ApiClient.GetWatchlistAsync();
+        }
+        catch (ApiException exception)
+        {
+            _errorMessage = exception.Message;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        _errorMessage = null;
+
+        try
+        {
+            if (_editingId.HasValue)
+            {
+                await ApiClient.UpdateWatchlistItemAsync(_editingId.Value, _form.ToRequest());
+            }
+            else
+            {
+                await ApiClient.CreateWatchlistItemAsync(_form.ToRequest());
+            }
+
+            ResetForm();
+            await LoadAsync();
+        }
+        catch (ApiException exception)
+        {
+            _errorMessage = exception.Message;
+        }
+    }
+
+    private void Edit(WatchlistItemDto item)
+    {
+        _editingId = item.Id;
+        _form = WatchlistFormModel.FromDto(item);
+        _errorMessage = null;
+    }
+
+    private async Task DeleteAsync(int id)
+    {
+        _errorMessage = null;
+
+        try
+        {
+            await ApiClient.DeleteWatchlistItemAsync(id);
+            await LoadAsync();
+        }
+        catch (ApiException exception)
+        {
+            _errorMessage = exception.Message;
+        }
+    }
+
+    private void ResetForm()
+    {
+        _editingId = null;
+        _form = new WatchlistFormModel();
+        _errorMessage = null;
+    }
+}
