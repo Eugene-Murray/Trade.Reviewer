@@ -27,8 +27,8 @@ Trade.Reviewer.slnx
 - `Trade.Domain`: entities and enums only.
 - `Trade.Application`: DTOs, request models, exceptions, and service interfaces.
 - `Trade.Infrastructure`: SQLite-backed EF Core implementation, migrations, deterministic seed data, and service implementations.
-- `Trade.Mcp.Api`: HTTP endpoints, health checks, CORS, Serilog, and centralized exception handling.
-- `Trade.Dashboard`: Blazor UI that calls the API rather than reaching into the database directly.
+- `Trade.Mcp.Api`: HTTP endpoints, health checks, CORS, Serilog, centralized exception handling, an HTTP MCP server, and an API-side MCP client used by the chat endpoint.
+- `Trade.Dashboard`: Blazor UI that calls the API rather than reaching into the database directly, including a chat page for portfolio questions.
 
 ## Data relationships
 
@@ -43,6 +43,13 @@ This preserves the requested schema while still giving EF Core navigation proper
 - Home page: SSR
 - Accounts and trades pages: Interactive Server
 - Watchlist and trade signals pages: Interactive WebAssembly
+- Chat page: Interactive Server
+
+## MCP integration
+
+- The API hosts a stateless Streamable HTTP MCP endpoint at `/mcp`.
+- MCP tools expose read-only access to accounts, trades, watchlist items, and trade signals.
+- `POST /api/chat/ask` uses an API-side MCP HTTP client to call those tools and then runs deterministic answer-building logic over the returned data.
 
 ## Local development flow
 

@@ -1,4 +1,5 @@
 using Trade.Application.Accounts;
+using Trade.Application.Chat;
 using Trade.Application.TradeSignals;
 using Trade.Application.Trades;
 using Trade.Application.Watchlist;
@@ -38,4 +39,6 @@ public interface ITradeDashboardApiClient
     Task<TradeDto> UpdateTradeAsync(int id, UpsertTradeRequest request, CancellationToken cancellationToken = default);
 
     Task DeleteTradeAsync(int id, CancellationToken cancellationToken = default);
+
+    Task<ChatAnswerDto> AskTradeQuestionAsync(AskTradeQuestionRequest request, CancellationToken cancellationToken = default);
 }

@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Trade.Application.Accounts;
+using Trade.Application.Chat;
 using Trade.Application.TradeSignals;
 using Trade.Application.Trades;
 using Trade.Application.Watchlist;
@@ -63,6 +64,9 @@ public sealed class TradeDashboardApiClient(HttpClient httpClient) : ITradeDashb
 
     public Task DeleteTradeAsync(int id, CancellationToken cancellationToken = default) =>
         DeleteAsync($"api/trades/{id}", cancellationToken);
+
+    public Task<ChatAnswerDto> AskTradeQuestionAsync(AskTradeQuestionRequest request, CancellationToken cancellationToken = default) =>
+        SendAsync<ChatAnswerDto>(HttpMethod.Post, "api/chat/ask", request, cancellationToken);
 
     private async Task<IReadOnlyList<T>> GetListAsync<T>(string relativeUrl, CancellationToken cancellationToken)
     {

@@ -2,6 +2,8 @@
 
 .NET 10 trade review solution with a Minimal API, EF Core + SQLite persistence, and a Blazor dashboard for CRUD management of accounts, watchlist entries, trade signals, and trades.
 
+It also includes an HTTP MCP server on the API plus a dashboard chat page that asks the API portfolio questions through MCP tools.
+
 ## Projects
 
 | Path | Purpose |
@@ -9,9 +11,9 @@
 | `src/Trade.Domain` | Core entities and enums |
 | `src/Trade.Application` | DTOs, service contracts, exceptions, and trade performance logic |
 | `src/Trade.Infrastructure` | EF Core DbContext, migrations, seeding, and service implementations |
-| `src/Trade.Mcp.Api` | Minimal API host, logging, health checks, and exception handling |
+| `src/Trade.Mcp.Api` | Minimal API host, logging, health checks, MCP server/client wiring, and chat endpoint |
 | `src/Trade.Dashboard/Trade.Dashboard` | Blazor Web App host with SSR + interactive render modes |
-| `src/Trade.Dashboard/Trade.Dashboard.Client` | Interactive Server/WebAssembly pages and API client |
+| `src/Trade.Dashboard/Trade.Dashboard.Client` | Interactive Server/WebAssembly pages, API client, and portfolio chat UI |
 | `tests/*` | Domain, application, and API tests |
 
 ## Data model
@@ -41,7 +43,14 @@ dotnet run --project src\Trade.Dashboard\Trade.Dashboard\Trade.Dashboard.csproj
 Default local URLs:
 
 - API: `https://localhost:7091`
+- API MCP endpoint: `https://localhost:7091/mcp`
 - Dashboard: `https://localhost:7187`
+
+## MCP and chat
+
+- The API exposes read-only MCP tools for accounts, trades, watchlist items, and trade signals at `/mcp`.
+- The API chat endpoint is `POST /api/chat/ask`.
+- The dashboard chat page is available at `/chat` and sends freeform questions to the API, which answers by querying its own MCP tools.
 
 ## Test
 

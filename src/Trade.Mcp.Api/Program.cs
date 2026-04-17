@@ -1,16 +1,20 @@
 using System.Text.Json.Serialization;
+using ModelContextProtocol.Server;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Scalar.AspNetCore;
 using Serilog;
+using Trade.Application.Chat;
 using Trade.Application.Common.Services;
 using Trade.Infrastructure;
 using Trade.Infrastructure.Persistence;
 using Trade.Mcp.Api.Features.Accounts;
+using Trade.Mcp.Api.Features.Chat;
 using Trade.Mcp.Api.Features.TradeSignals;
 using Trade.Mcp.Api.Features.Trades;
 using Trade.Mcp.Api.Features.Watchlist;
 using Trade.Mcp.Api.Infrastructure;
+using Trade.Mcp.Api.Mcp;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,8 +31,19 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddOpenApi();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient("trade-mcp-chat");
 builder.Services.AddScoped<ITradePerformanceCalculator, TradePerformanceCalculator>();
+builder.Services.AddScoped<ITradeQuestionAnswerBuilder, TradeQuestionAnswerBuilder>();
+builder.Services.AddScoped<ITradeQuestionService, TradeQuestionService>();
+builder.Services.AddScoped<TradeMcpTools>();
 builder.Services.AddTradeInfrastructure(builder.Configuration);
+builder.Services.AddMcpServer()
+    .WithHttpTransport(options =>
+    {
+        options.Stateless = true;
+    })
+    .WithTools<TradeMcpTools>();
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<TradeReviewerDbContext>("trade_dashboard");
 builder.Services.AddCors(options =>
@@ -65,9 +80,11 @@ app.MapGet("/", () => Results.Ok(new
 }));
 
 app.MapHealthChecks("/health");
+app.MapMcp("/mcp");
 
 var api = app.MapGroup("/api");
 api.MapAccountEndpoints();
+api.MapChatEndpoints();
 api.MapWatchlistEndpoints();
 api.MapTradeSignalEndpoints();
 api.MapTradeEndpoints();

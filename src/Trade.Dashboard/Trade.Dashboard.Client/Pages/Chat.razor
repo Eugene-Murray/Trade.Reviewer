@@ -1,0 +1,161 @@
+@page "/chat"
+@rendermode InteractiveServer
+@inject ITradeDashboardApiClient ApiClient
+
+<PageTitle>Chat</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="mb-0">Portfolio chat</h1>
+        <p class="text-muted mb-0">Ask MCP-backed questions about accounts, trades, watchlist items, and trade signals.</p>
+    </div>
+    <span class="badge text-bg-primary">MCP</span>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">Ask a question</h2>
+
+                <EditForm Model="_form" OnValidSubmit="SubmitAsync">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="mb-3">
+                        <label class="form-label" for="chat-question">Question</label>
+                        <InputTextArea id="chat-question" class="form-control" rows="6" @bind-Value="_form.Question" />
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary" disabled="@_isLoading">
+                            @(_isLoading ? "Asking..." : "Ask")
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" @onclick="ResetPrompt" disabled="@_isLoading">Reset</button>
+                    </div>
+                </EditForm>
+
+                <hr />
+
+                <h3 class="h6">Examples</h3>
+                <div class="d-grid gap-2">
+                    @foreach (var prompt in ExamplePrompts)
+                    {
+                        <button type="button" class="btn btn-outline-primary text-start" @onclick="() => UsePrompt(prompt)">
+                            @prompt
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <div class="alert alert-danger">@_errorMessage</div>
+        }
+
+        @if (_history.Count == 0)
+        {
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <p class="mb-0">No chat messages yet. Ask about balances, open trades, signal direction, or whether a stock is on the watchlist.</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="d-flex flex-column gap-3">
+                @foreach (var item in _history)
+                {
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <div class="small text-muted mb-1">You asked</div>
+                                <div>@item.Question</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="small text-muted mb-1">API answer</div>
+                                <pre class="mb-0 text-wrap" style="white-space: pre-wrap;">@item.Answer</pre>
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                @foreach (var tool in item.UsedTools)
+                                {
+                                    <span class="badge text-bg-light border">@tool</span>
+                                }
+                            </div>
+
+                            @if (item.ReferencedAccounts.Count > 0 || item.ReferencedStocks.Count > 0)
+                            {
+                                <div class="small text-muted">
+                                    @if (item.ReferencedAccounts.Count > 0)
+                                    {
+                                        <span>Accounts: @string.Join(", ", item.ReferencedAccounts)</span>
+                                    }
+                                    @if (item.ReferencedAccounts.Count > 0 && item.ReferencedStocks.Count > 0)
+                                    {
+                                        <span> | </span>
+                                    }
+                                    @if (item.ReferencedStocks.Count > 0)
+                                    {
+                                        <span>Stocks: @string.Join(", ", item.ReferencedStocks)</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private static readonly IReadOnlyList<string> ExamplePrompts =
+    [
+        "Which account has the highest balance?",
+        "How are my open trades performing right now?",
+        "Is Apple (AAPL) on the watchlist and do I have any signals for it?",
+        "Show me the best and worst trades in the Trading Account.",
+    ];
+
+    private readonly List<ChatAnswerDto> _history = [];
+    private ChatPromptFormModel _form = new();
+    private bool _isLoading;
+    private string? _errorMessage;
+
+    private async Task SubmitAsync()
+    {
+        _errorMessage = null;
+        _isLoading = true;
+
+        try
+        {
+            var answer = await ApiClient.AskTradeQuestionAsync(_form.ToRequest());
+            _history.Insert(0, answer);
+        }
+        catch (ApiException exception)
+        {
+            _errorMessage = exception.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void UsePrompt(string prompt)
+    {
+        _form.Question = prompt;
+        _errorMessage = null;
+    }
+
+    private void ResetPrompt()
+    {
+        _form = new ChatPromptFormModel();
+        _errorMessage = null;
+    }
+}
