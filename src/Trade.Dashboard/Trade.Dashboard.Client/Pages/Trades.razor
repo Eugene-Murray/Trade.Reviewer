@@ -4,8 +4,16 @@
 
 <PageTitle>Trades</PageTitle>
 
-<h1>Trades</h1>
-<p>Create, update, and close positions through the Minimal API.</p>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="mb-0">Trades</h1>
+        <p class="text-muted mb-0">Create, update, and close positions through the Minimal API.</p>
+    </div>
+    <button class="btn btn-outline-primary" @onclick="ToggleAddSection">
+        <span class="bi @(_showAddSection ? "bi-dash-lg" : "bi-plus-lg") me-1"></span>
+        @(_showAddSection ? "Hide form" : "Add new")
+    </button>
+</div>
 
 @if (!string.IsNullOrWhiteSpace(_errorMessage))
 {
@@ -13,87 +21,90 @@
 }
 
 <div class="row g-4">
-    <div class="col-lg-4">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h2 class="h5">@(_editingId.HasValue ? "Edit trade" : "Add trade")</h2>
-                <EditForm Model="_form" OnValidSubmit="SaveAsync">
-                    <DataAnnotationsValidator />
-                    <ValidationSummary />
+    @if (_showAddSection)
+    {
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5">@(_editingId.HasValue ? "Edit trade" : "Add trade")</h2>
+                    <EditForm Model="_form" OnValidSubmit="SaveAsync">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
 
-                    <div class="mb-3">
-                        <label class="form-label" for="trade-stock">Stock name</label>
-                        <InputText id="trade-stock" class="form-control" @bind-Value="_form.StockName" />
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="trade-stock">Stock name</label>
+                            <InputText id="trade-stock" class="form-control" @bind-Value="_form.StockName" />
+                        </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label" for="entry-price">Entry price</label>
-                            <InputNumber id="entry-price" class="form-control" @bind-Value="_form.EntryPrice" />
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label" for="current-price">Current price</label>
-                            <InputNumber id="current-price" class="form-control" @bind-Value="_form.CurrentPrice" />
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label" for="position-size">Position size</label>
-                            <InputNumber id="position-size" class="form-control" @bind-Value="_form.PositionSize" />
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label" for="trade-account">Account</label>
-                            <InputSelect id="trade-account" class="form-select" @bind-Value="_form.AccountId">
-                                <option value="0">Select an account</option>
-                                @if (_accounts is not null)
-                                {
-                                    @foreach (var account in _accounts)
-                                    {
-                                        <option value="@account.Id">@account.AccountName</option>
-                                    }
-                                }
-                            </InputSelect>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label" for="open-date">Open date</label>
-                            <InputDate id="open-date" class="form-control" @bind-Value="_form.OpenDate" />
-                        </div>
-                        <div class="col-md-6 mb-3 d-flex align-items-end">
-                            <div class="form-check mb-2">
-                                <InputCheckbox id="is-closed" class="form-check-input" @bind-Value="_form.IsClosed" />
-                                <label class="form-check-label" for="is-closed">Trade is closed</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    @if (_form.IsClosed)
-                    {
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label" for="close-price">Close price</label>
-                                <InputNumber id="close-price" class="form-control" @bind-Value="_form.ClosePrice" />
+                                <label class="form-label" for="entry-price">Entry price</label>
+                                <InputNumber id="entry-price" class="form-control" @bind-Value="_form.EntryPrice" />
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label" for="close-date">Close date</label>
-                                <InputDate id="close-date" class="form-control" @bind-Value="_form.CloseDate" />
+                                <label class="form-label" for="current-price">Current price</label>
+                                <InputNumber id="current-price" class="form-control" @bind-Value="_form.CurrentPrice" />
                             </div>
                         </div>
-                    }
 
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">@(_editingId.HasValue ? "Save changes" : "Create trade")</button>
-                        <button type="button" class="btn btn-outline-secondary" @onclick="ResetForm">Clear</button>
-                    </div>
-                </EditForm>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" for="position-size">Position size</label>
+                                <InputNumber id="position-size" class="form-control" @bind-Value="_form.PositionSize" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" for="trade-account">Account</label>
+                                <InputSelect id="trade-account" class="form-select" @bind-Value="_form.AccountId">
+                                    <option value="0">Select an account</option>
+                                    @if (_accounts is not null)
+                                    {
+                                        @foreach (var account in _accounts)
+                                        {
+                                            <option value="@account.Id">@account.AccountName</option>
+                                        }
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" for="open-date">Open date</label>
+                                <InputDate id="open-date" class="form-control" @bind-Value="_form.OpenDate" />
+                            </div>
+                            <div class="col-md-6 mb-3 d-flex align-items-end">
+                                <div class="form-check mb-2">
+                                    <InputCheckbox id="is-closed" class="form-check-input" @bind-Value="_form.IsClosed" />
+                                    <label class="form-check-label" for="is-closed">Trade is closed</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (_form.IsClosed)
+                        {
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label" for="close-price">Close price</label>
+                                    <InputNumber id="close-price" class="form-control" @bind-Value="_form.ClosePrice" />
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label" for="close-date">Close date</label>
+                                    <InputDate id="close-date" class="form-control" @bind-Value="_form.CloseDate" />
+                                </div>
+                            </div>
+                        }
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">@(_editingId.HasValue ? "Save changes" : "Create trade")</button>
+                            <button type="button" class="btn btn-outline-secondary" @onclick="ResetForm">Clear</button>
+                        </div>
+                    </EditForm>
+                </div>
             </div>
         </div>
-    </div>
+    }
 
-    <div class="col-lg-8">
+    <div class="@(_showAddSection ? "col-lg-8" : "col-12")">
         <div class="card shadow-sm">
             <div class="card-body">
                 <h2 class="h5">Current trades</h2>
@@ -202,6 +213,7 @@
     private TradeFormModel _form = new();
     private int? _editingId;
     private string? _errorMessage;
+    private bool _showAddSection = true;
 
     // Search, filter, and paging
     private string _searchTerm = string.Empty;
@@ -286,6 +298,7 @@
         _editingId = trade.Id;
         _form = TradeFormModel.FromDto(trade);
         _errorMessage = null;
+        _showAddSection = true;
     }
 
     private async Task DeleteAsync(int id)
@@ -308,5 +321,14 @@
         _editingId = null;
         _form = new TradeFormModel();
         _errorMessage = null;
+    }
+
+    private void ToggleAddSection()
+    {
+        _showAddSection = !_showAddSection;
+        if (!_showAddSection)
+        {
+            ResetForm();
+        }
     }
 }

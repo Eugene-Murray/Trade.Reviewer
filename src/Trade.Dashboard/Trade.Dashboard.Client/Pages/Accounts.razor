@@ -4,8 +4,16 @@
 
 <PageTitle>Accounts</PageTitle>
 
-<h1>Accounts</h1>
-<p>Update account names and balances through the Minimal API.</p>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="mb-0">Accounts</h1>
+        <p class="text-muted mb-0">Update account names and balances through the Minimal API.</p>
+    </div>
+    <button class="btn btn-outline-primary" @onclick="ToggleAddSection">
+        <span class="bi @(_showAddSection ? "bi-dash-lg" : "bi-plus-lg") me-1"></span>
+        @(_showAddSection ? "Hide form" : "Add new")
+    </button>
+</div>
 
 @if (!string.IsNullOrWhiteSpace(_errorMessage))
 {
@@ -13,34 +21,37 @@
 }
 
 <div class="row g-4">
-    <div class="col-lg-4">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h2 class="h5">@(_editingId.HasValue ? "Edit account" : "Add account")</h2>
-                <EditForm Model="_form" OnValidSubmit="SaveAsync">
-                    <DataAnnotationsValidator />
-                    <ValidationSummary />
+    @if (_showAddSection)
+    {
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5">@(_editingId.HasValue ? "Edit account" : "Add account")</h2>
+                    <EditForm Model="_form" OnValidSubmit="SaveAsync">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
 
-                    <div class="mb-3">
-                        <label class="form-label" for="account-name">Account name</label>
-                        <InputText id="account-name" class="form-control" @bind-Value="_form.AccountName" />
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="account-name">Account name</label>
+                            <InputText id="account-name" class="form-control" @bind-Value="_form.AccountName" />
+                        </div>
 
-                    <div class="mb-3">
-                        <label class="form-label" for="account-balance">Account balance</label>
-                        <InputNumber id="account-balance" class="form-control" @bind-Value="_form.AccountBalance" />
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="account-balance">Account balance</label>
+                            <InputNumber id="account-balance" class="form-control" @bind-Value="_form.AccountBalance" />
+                        </div>
 
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">@(_editingId.HasValue ? "Save changes" : "Create account")</button>
-                        <button type="button" class="btn btn-outline-secondary" @onclick="ResetForm">Clear</button>
-                    </div>
-                </EditForm>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">@(_editingId.HasValue ? "Save changes" : "Create account")</button>
+                            <button type="button" class="btn btn-outline-secondary" @onclick="ResetForm">Clear</button>
+                        </div>
+                    </EditForm>
+                </div>
             </div>
         </div>
-    </div>
+    }
 
-    <div class="col-lg-8">
+    <div class="@(_showAddSection ? "col-lg-8" : "col-12")">
         <div class="card shadow-sm">
             <div class="card-body">
                 <h2 class="h5">Current accounts</h2>
@@ -127,6 +138,7 @@
     private AccountFormModel _form = new();
     private int? _editingId;
     private string? _errorMessage;
+    private bool _showAddSection = true;
 
     // Search and paging
     private string _searchTerm = string.Empty;
@@ -203,6 +215,7 @@
         _editingId = account.Id;
         _form = AccountFormModel.FromDto(account);
         _errorMessage = null;
+        _showAddSection = true;
     }
 
     private async Task DeleteAsync(int id)
@@ -225,5 +238,14 @@
         _editingId = null;
         _form = new AccountFormModel();
         _errorMessage = null;
+    }
+
+    private void ToggleAddSection()
+    {
+        _showAddSection = !_showAddSection;
+        if (!_showAddSection)
+        {
+            ResetForm();
+        }
     }
 }

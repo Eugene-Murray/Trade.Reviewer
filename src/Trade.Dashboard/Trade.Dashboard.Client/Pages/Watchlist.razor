@@ -4,8 +4,16 @@
 
 <PageTitle>Watchlist</PageTitle>
 
-<h1>Watchlist</h1>
-<p>Maintain the seeded Nasdaq mega-cap watchlist over WebAssembly.</p>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="mb-0">Watchlist</h1>
+        <p class="text-muted mb-0">Maintain the seeded Nasdaq mega-cap watchlist over WebAssembly.</p>
+    </div>
+    <button class="btn btn-outline-primary" @onclick="ToggleAddSection">
+        <span class="bi @(_showAddSection ? "bi-dash-lg" : "bi-plus-lg") me-1"></span>
+        @(_showAddSection ? "Hide form" : "Add new")
+    </button>
+</div>
 
 @if (!string.IsNullOrWhiteSpace(_errorMessage))
 {
@@ -13,39 +21,42 @@
 }
 
 <div class="row g-4">
-    <div class="col-lg-4">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h2 class="h5">@(_editingId.HasValue ? "Edit watchlist item" : "Add watchlist item")</h2>
-                <EditForm Model="_form" OnValidSubmit="SaveAsync">
-                    <DataAnnotationsValidator />
-                    <ValidationSummary />
+    @if (_showAddSection)
+    {
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5">@(_editingId.HasValue ? "Edit watchlist item" : "Add watchlist item")</h2>
+                    <EditForm Model="_form" OnValidSubmit="SaveAsync">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
 
-                    <div class="mb-3">
-                        <label class="form-label" for="stock-name">Stock name</label>
-                        <InputText id="stock-name" class="form-control" @bind-Value="_form.StockName" />
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="stock-name">Stock name</label>
+                            <InputText id="stock-name" class="form-control" @bind-Value="_form.StockName" />
+                        </div>
 
-                    <div class="mb-3">
-                        <label class="form-label" for="watchlist-notes">Notes</label>
-                        <InputTextArea id="watchlist-notes" class="form-control" @bind-Value="_form.Notes" />
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="watchlist-notes">Notes</label>
+                            <InputTextArea id="watchlist-notes" class="form-control" @bind-Value="_form.Notes" />
+                        </div>
 
-                    <div class="mb-3">
-                        <label class="form-label" for="date-added">Date added</label>
-                        <InputDate id="date-added" class="form-control" @bind-Value="_form.DateAdded" />
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="date-added">Date added</label>
+                            <InputDate id="date-added" class="form-control" @bind-Value="_form.DateAdded" />
+                        </div>
 
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">@(_editingId.HasValue ? "Save changes" : "Create item")</button>
-                        <button type="button" class="btn btn-outline-secondary" @onclick="ResetForm">Clear</button>
-                    </div>
-                </EditForm>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">@(_editingId.HasValue ? "Save changes" : "Create item")</button>
+                            <button type="button" class="btn btn-outline-secondary" @onclick="ResetForm">Clear</button>
+                        </div>
+                    </EditForm>
+                </div>
             </div>
         </div>
-    </div>
+    }
 
-    <div class="col-lg-8">
+    <div class="@(_showAddSection ? "col-lg-8" : "col-12")">
         <div class="card shadow-sm">
             <div class="card-body">
                 <h2 class="h5">Current watchlist</h2>
@@ -134,6 +145,7 @@
     private WatchlistFormModel _form = new();
     private int? _editingId;
     private string? _errorMessage;
+    private bool _showAddSection = true;
 
     // Search and paging
     private string _searchTerm = string.Empty;
@@ -211,6 +223,7 @@
         _editingId = item.Id;
         _form = WatchlistFormModel.FromDto(item);
         _errorMessage = null;
+        _showAddSection = true;
     }
 
     private async Task DeleteAsync(int id)
@@ -233,5 +246,14 @@
         _editingId = null;
         _form = new WatchlistFormModel();
         _errorMessage = null;
+    }
+
+    private void ToggleAddSection()
+    {
+        _showAddSection = !_showAddSection;
+        if (!_showAddSection)
+        {
+            ResetForm();
+        }
     }
 }

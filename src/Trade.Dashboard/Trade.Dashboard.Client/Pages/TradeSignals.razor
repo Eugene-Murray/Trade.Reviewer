@@ -4,8 +4,16 @@
 
 <PageTitle>Trade Signals</PageTitle>
 
-<h1>Trade signals</h1>
-<p>Maintain long and short signals over WebAssembly.</p>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="mb-0">Trade signals</h1>
+        <p class="text-muted mb-0">Maintain long and short signals over WebAssembly.</p>
+    </div>
+    <button class="btn btn-outline-primary" @onclick="ToggleAddSection">
+        <span class="bi @(_showAddSection ? "bi-dash-lg" : "bi-plus-lg") me-1"></span>
+        @(_showAddSection ? "Hide form" : "Add new")
+    </button>
+</div>
 
 @if (!string.IsNullOrWhiteSpace(_errorMessage))
 {
@@ -13,44 +21,47 @@
 }
 
 <div class="row g-4">
-    <div class="col-lg-4">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h2 class="h5">@(_editingId.HasValue ? "Edit signal" : "Add signal")</h2>
-                <EditForm Model="_form" OnValidSubmit="SaveAsync">
-                    <DataAnnotationsValidator />
-                    <ValidationSummary />
+    @if (_showAddSection)
+    {
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5">@(_editingId.HasValue ? "Edit signal" : "Add signal")</h2>
+                    <EditForm Model="_form" OnValidSubmit="SaveAsync">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
 
-                    <div class="mb-3">
-                        <label class="form-label" for="signal-stock">Stock name</label>
-                        <InputText id="signal-stock" class="form-control" @bind-Value="_form.StockName" />
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="signal-stock">Stock name</label>
+                            <InputText id="signal-stock" class="form-control" @bind-Value="_form.StockName" />
+                        </div>
 
-                    <div class="mb-3">
-                        <label class="form-label" for="signal-direction">Direction</label>
-                        <InputSelect id="signal-direction" class="form-select" @bind-Value="_form.Direction">
-                            @foreach (var direction in Enum.GetValues<TradeDirection>())
-                            {
-                                <option value="@direction">@direction</option>
-                            }
-                        </InputSelect>
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="signal-direction">Direction</label>
+                            <InputSelect id="signal-direction" class="form-select" @bind-Value="_form.Direction">
+                                @foreach (var direction in Enum.GetValues<TradeDirection>())
+                                {
+                                    <option value="@direction">@direction</option>
+                                }
+                            </InputSelect>
+                        </div>
 
-                    <div class="mb-3">
-                        <label class="form-label" for="signal-date">Signal date</label>
-                        <InputDate id="signal-date" class="form-control" @bind-Value="_form.SignalDate" />
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="signal-date">Signal date</label>
+                            <InputDate id="signal-date" class="form-control" @bind-Value="_form.SignalDate" />
+                        </div>
 
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">@(_editingId.HasValue ? "Save changes" : "Create signal")</button>
-                        <button type="button" class="btn btn-outline-secondary" @onclick="ResetForm">Clear</button>
-                    </div>
-                </EditForm>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">@(_editingId.HasValue ? "Save changes" : "Create signal")</button>
+                            <button type="button" class="btn btn-outline-secondary" @onclick="ResetForm">Clear</button>
+                        </div>
+                    </EditForm>
+                </div>
             </div>
         </div>
-    </div>
+    }
 
-    <div class="col-lg-8">
+    <div class="@(_showAddSection ? "col-lg-8" : "col-12")">
         <div class="card shadow-sm">
             <div class="card-body">
                 <h2 class="h5">Current signals</h2>
@@ -144,6 +155,7 @@
     private TradeSignalFormModel _form = new();
     private int? _editingId;
     private string? _errorMessage;
+    private bool _showAddSection = true;
 
     // Search, filter, and paging
     private string _searchTerm = string.Empty;
@@ -223,6 +235,7 @@
         _editingId = signal.Id;
         _form = TradeSignalFormModel.FromDto(signal);
         _errorMessage = null;
+        _showAddSection = true;
     }
 
     private async Task DeleteAsync(int id)
@@ -245,5 +258,14 @@
         _editingId = null;
         _form = new TradeSignalFormModel();
         _errorMessage = null;
+    }
+
+    private void ToggleAddSection()
+    {
+        _showAddSection = !_showAddSection;
+        if (!_showAddSection)
+        {
+            ResetForm();
+        }
     }
 }
