@@ -12,5 +12,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+    <PackageReference Include="Microsoft.Extensions.AI" />
+    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
+    <PackageReference Include="ModelContextProtocol" />
   </ItemGroup>
 </Project>
